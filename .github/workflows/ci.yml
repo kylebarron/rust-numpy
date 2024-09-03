@@ -34,11 +34,14 @@ jobs:
         python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
         platform: [
           { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" },
-          { os: "macOS-latest",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
+          { os: "macOS-13",   python-architecture: "x64", rust-target: "x86_64-apple-darwin" },
           { os: "windows-latest", python-architecture: "x64", rust-target: "x86_64-pc-windows-msvc" },
           { os: "windows-latest", python-architecture: "x86", rust-target: "i686-pc-windows-msvc" },
         ]
         include:
+          # Older versions of CPython are not available for AArch64.
+          - python-version: 3.12
+            platform: { os: "macOS-latest", python-architecture: "arm64", rust-target: "aarch64-apple-darwin" }
           # NumPy does not provide pre-built wheels for PyPy on macOS and Windows
           - python-version: pypy-3.7
             platform: { os: "ubuntu-latest", python-architecture: "x64", rust-target: "x86_64-unknown-linux-gnu" }
@@ -67,7 +70,7 @@ jobs:
         shell: python
       - name: Test
         run: |
-            pip install numpy ml_dtypes
+            pip install "numpy<2" ml_dtypes
             cargo test --all-features
         # Not on PyPy, because no embedding API
         if: ${{ !startsWith(matrix.python-version, 'pypy') }}
@@ -101,7 +104,7 @@ jobs:
         continue-on-error: true
       - uses: taiki-e/install-action@valgrind
       - run: |
-            pip install numpy ml_dtypes
+            pip install "numpy<2" ml_dtypes
             cargo test --all-features --release
         env:
           CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER: valgrind --leak-check=no --error-exitcode=1
@@ -116,7 +119,7 @@ jobs:
         continue-on-error: true
       - uses: taiki-e/install-action@cargo-careful
       - run: |
-            pip install numpy ml_dtypes
+            pip install "numpy<2" ml_dtypes
             cargo careful test --all-features
 
   check-msrv:
@@ -192,7 +195,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install numpy
-        run: pip install numpy ml_dtypes
+        run: pip install "numpy<2" ml_dtypes
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
       - uses: dtolnay/rust-toolchain@stable
